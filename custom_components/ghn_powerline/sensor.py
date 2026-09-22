@@ -132,6 +132,7 @@ SENSORS: tuple[GhnSensorDescription, ...] = (
             translation_key=f"{port.lower()}_speed",
             device_class=SensorDeviceClass.DATA_RATE,
             native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+            suggested_display_precision=0,
             entity_category=EntityCategory.DIAGNOSTIC,
             value_fn=_eth_speed(port),
             exists_fn=_port_enabled(port),
