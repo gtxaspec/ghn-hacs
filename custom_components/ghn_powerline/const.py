@@ -1,0 +1,71 @@
+"""Constants for the G.hn Powerline integration."""
+
+from __future__ import annotations
+
+import logging
+from typing import Final
+
+DOMAIN: Final = "ghn_powerline"
+LOGGER = logging.getLogger(__package__)
+
+CONF_SCAN_INTERVAL: Final = "scan_interval"
+DEFAULT_SCAN_INTERVAL: Final = 60
+MIN_SCAN_INTERVAL: Final = 30
+MAX_SCAN_INTERVAL: Final = 3600
+
+# After this long without a poll because someone else holds the adapter's single web
+# session, entities go unavailable instead of showing stale values.
+BUSY_GRACE_SECONDS: Final = 600
+
+# Names of PHYMNG.GENERAL.RUNNING_PHYMODE_ID values, as the Zyxel PLA6456 web UI labels them.
+PROFILE_NAMES: Final = {
+    7: "PLC 100 MHz MIMO Boost",
+    23: "PLC 100 MHz Boost",
+}
+
+ETH_PORTS: Final = ("ETHA", "ETHB")
+
+POLL_KEYS: Final = (
+    "SYSTEM.PRODUCTION.MAC_ADDR",
+    "SYSTEM.PRODUCTION.DEVICE_NAME",
+    "SYSTEM.PRODUCTION.DEVICE_MANUFACTURER",
+    "SYSTEM.PRODUCTION.SERIAL_NUMBER",
+    "SYSTEM.PRODUCTION.HW_REVISION",
+    "SYSTEM.GENERAL.FW_VERSION",
+    "SYSTEM.GENERAL.FW_VERSION_ALIAS",
+    "SYSTEM.GENERAL.CHIPSET",
+    "SYSTEM.GENERAL.UPTIME",
+    "SYSTEM.STATS.CPU_USAGE",
+    "SYSTEM.STATS.FREE_MEMORY",
+    "SYSTEM.STATS.TOTAL_MEMORY",
+    "TEMPSENSORS.GENERAL.MEASURE",
+    "NODE.GENERAL.NODE_TYPE",
+    "NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR",
+    "PAIRING.GENERAL.SECURED",
+    "PHYMNG.GENERAL.RUNNING_PHYMODE_ID",
+    "POWERSAVING.GENERAL.MODE",
+    "POWERMASK.USER.NOTCHES",
+    "DIDMNG.GENERAL.DIDS",
+    "DIDMNG.GENERAL.MACS",
+    "DIDMNG.GENERAL.ACTIVE",
+    "DIDMNG.GENERAL.TX_BPS",
+    "DIDMNG.GENERAL.RX_BPS",
+    "DIDMNG.GENERAL.AVG_ATTENUATION",
+    "DIDMNG.GENERAL.WIRE_LENGTH",
+    "ETHIFDRIVER.ETHA.ENABLED",
+    "ETHIFDRIVER.ETHB.ENABLED",
+    "ETHPHYCONF.ETHA.LINK",
+    "ETHPHYCONF.ETHA.SPEED",
+    "ETHPHYCONF.ETHB.LINK",
+    "ETHPHYCONF.ETHB.SPEED",
+)
+
+# Redacted from diagnostics. The domain name plus the pairing password is what it takes
+# to join the powerline network.
+TO_REDACT: Final = {
+    "password",
+    "PAIRING.GENERAL.PASSWORD",
+    "NODE.GENERAL.DOMAIN_NAME",
+    "SYSTEM.PRODUCTION.SERIAL_NUMBER",
+}
+TO_REDACT_SUBSTRINGS: Final = ("PASSWORD", "NMK", "DAK", "SECRET", "KEY")

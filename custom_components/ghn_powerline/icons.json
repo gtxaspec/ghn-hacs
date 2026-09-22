@@ -1,0 +1,47 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "encryption": {
+        "default": "mdi:lock-open-variant",
+        "state": {
+          "on": "mdi:lock"
+        }
+      }
+    },
+    "sensor": {
+      "role": {
+        "default": "mdi:crown-outline",
+        "state": {
+          "end_point": "mdi:power-socket"
+        }
+      },
+      "connected_peers": {
+        "default": "mdi:lan-connect"
+      },
+      "cpu_usage": {
+        "default": "mdi:cpu-32-bit"
+      },
+      "memory_usage": {
+        "default": "mdi:memory"
+      },
+      "profile": {
+        "default": "mdi:sine-wave"
+      },
+      "user_notches": {
+        "default": "mdi:tune-vertical"
+      },
+      "peer_tx_rate": {
+        "default": "mdi:upload-network"
+      },
+      "peer_rx_rate": {
+        "default": "mdi:download-network"
+      },
+      "peer_attenuation": {
+        "default": "mdi:signal-cellular-outline"
+      },
+      "peer_wire_length": {
+        "default": "mdi:cable-data"
+      }
+    }
+  }
+}

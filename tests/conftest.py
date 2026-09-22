@@ -1,0 +1,52 @@
+"""Shared fixtures."""
+
+from __future__ import annotations
+
+import pytest
+
+pytest_plugins = "pytest_homeassistant_custom_component"
+
+
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    """Let Home Assistant load the integration from custom_components/."""
+    return
+
+
+MAC = "02:00:00:00:00:01"
+PEER = "02:00:00:00:00:02"
+
+POLL_VALUES = {
+    "SYSTEM.PRODUCTION.MAC_ADDR": MAC,
+    "SYSTEM.PRODUCTION.DEVICE_NAME": "PLA6456",
+    "SYSTEM.PRODUCTION.DEVICE_MANUFACTURER": "Zyxel Networks",
+    "SYSTEM.PRODUCTION.SERIAL_NUMBER": "S000000000000",
+    "SYSTEM.PRODUCTION.HW_REVISION": "2_0",
+    "SYSTEM.GENERAL.FW_VERSION": "V1.00(ABSU.7)C0 SPIRIT.v7_8_r619+37_cvs",
+    "SYSTEM.GENERAL.FW_VERSION_ALIAS": "V1.00(ABSU.7)C0",
+    "SYSTEM.GENERAL.CHIPSET": "Turia",
+    "SYSTEM.GENERAL.UPTIME": "0 days, 1h 0m 0s",
+    "SYSTEM.STATS.CPU_USAGE": "21",
+    "SYSTEM.STATS.FREE_MEMORY": "7760",
+    "SYSTEM.STATS.TOTAL_MEMORY": "9847",
+    "TEMPSENSORS.GENERAL.MEASURE": "7128",
+    "NODE.GENERAL.NODE_TYPE": "DOMAIN_MASTER",
+    "NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR": MAC,
+    "PAIRING.GENERAL.SECURED": "YES",
+    "PHYMNG.GENERAL.RUNNING_PHYMODE_ID": "7",
+    "POWERSAVING.GENERAL.MODE": "0",
+    "POWERMASK.USER.NOTCHES": "0",
+    "DIDMNG.GENERAL.DIDS": "0,1,2",
+    "DIDMNG.GENERAL.MACS": f"00:00:00:00:00:00,{MAC},{PEER}",
+    "DIDMNG.GENERAL.ACTIVE": "NO,YES,YES",
+    "DIDMNG.GENERAL.TX_BPS": "0,0,5909",
+    "DIDMNG.GENERAL.RX_BPS": "0,0,5956",
+    "DIDMNG.GENERAL.AVG_ATTENUATION": "0,0,527",
+    "DIDMNG.GENERAL.WIRE_LENGTH": "0,0,72",
+    "ETHIFDRIVER.ETHA.ENABLED": "NO",
+    "ETHIFDRIVER.ETHB.ENABLED": "YES",
+    "ETHPHYCONF.ETHA.LINK": "NO",
+    "ETHPHYCONF.ETHA.SPEED": "100",
+    "ETHPHYCONF.ETHB.LINK": "YES",
+    "ETHPHYCONF.ETHB.SPEED": "1000",
+}

@@ -1,0 +1,126 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a G.hn powerline adapter",
+        "description": "The adapter's web UI allows only one session at a time. Log out of it in your browser before continuing.",
+        "data": {
+          "host": "Host",
+          "password": "Web UI password"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the adapter's management interface.",
+          "password": "The password you log into the adapter's web UI with."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter the password",
+        "description": "The adapter at {host} rejected the stored password.",
+        "data": {
+          "password": "Web UI password"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure the adapter",
+        "data": {
+          "host": "Host",
+          "password": "Web UI password"
+        }
+      }
+    },
+    "error": {
+      "busy": "Another session is logged into the adapter's web UI. Log out of it and try again.",
+      "cannot_connect": "Failed to connect.",
+      "invalid_auth": "Invalid password.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This adapter is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Re-configuration was successful.",
+      "wrong_device": "That address belongs to a different adapter."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "data": {
+          "scan_interval": "Poll interval"
+        },
+        "data_description": {
+          "scan_interval": "Every poll logs into the adapter's web UI for a couple of seconds, so a browser session can collide with it."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "encryption": {
+        "name": "Encryption"
+      },
+      "etha_link": {
+        "name": "Ethernet A link"
+      },
+      "ethb_link": {
+        "name": "Ethernet link"
+      }
+    },
+    "sensor": {
+      "role": {
+        "name": "Role",
+        "state": {
+          "domain_master": "Domain master",
+          "end_point": "End point"
+        }
+      },
+      "connected_peers": {
+        "name": "Connected peers"
+      },
+      "cpu_usage": {
+        "name": "CPU usage"
+      },
+      "memory_usage": {
+        "name": "Memory usage"
+      },
+      "last_boot": {
+        "name": "Last boot"
+      },
+      "profile": {
+        "name": "G.hn profile"
+      },
+      "user_notches": {
+        "name": "User notches"
+      },
+      "etha_speed": {
+        "name": "Ethernet A speed"
+      },
+      "ethb_speed": {
+        "name": "Ethernet speed"
+      },
+      "peer_tx_rate": {
+        "name": "{peer} TX rate"
+      },
+      "peer_rx_rate": {
+        "name": "{peer} RX rate"
+      },
+      "peer_attenuation": {
+        "name": "{peer} attenuation (raw)"
+      },
+      "peer_wire_length": {
+        "name": "{peer} wire length (raw)"
+      }
+    }
+  },
+  "exceptions": {
+    "busy": {
+      "message": "Another session is logged into the adapter's web UI."
+    },
+    "cannot_connect": {
+      "message": "Could not reach the adapter: {error}"
+    },
+    "invalid_auth": {
+      "message": "The adapter rejected the password."
+    }
+  }
+}
