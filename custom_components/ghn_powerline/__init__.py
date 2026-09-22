@@ -36,6 +36,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GhnConfigEntry) -> bool:
     entry.runtime_data = GhnRuntimeData(client=client, coordinator=coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # The device exists once the platforms have registered entities, so link it now and
+    # re-check after every poll.
+    entry.async_on_unload(coordinator.async_add_listener(coordinator.async_update_via_device))
+    coordinator.async_update_via_device()
     return True
 
 

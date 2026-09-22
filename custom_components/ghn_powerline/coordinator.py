@@ -7,8 +7,9 @@ from datetime import datetime, timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo, format_mac
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -190,6 +191,31 @@ class GhnCoordinator(DataUpdateCoordinator[GhnData]):
             ) from err
         self._busy_since = None
         return build_data(values, self.data, self._labels())
+
+    @callback
+    def async_update_via_device(self) -> None:
+        """Show this adapter as connected via the domain master, like breakers under a hub.
+
+        Only links to a master that is another configured adapter whose device already
+        exists: pointing via_device at an unregistered device is an error in current Home
+        Assistant. Runs after every poll, so it follows a master failover and fills in once
+        the master's entry is added, in either order.
+        """
+        own = self.config_entry.unique_id
+        if self.data is None or not own:
+            return
+        registry = dr.async_get(self.hass)
+        device = registry.async_get_device(identifiers={(DOMAIN, own)})
+        if device is None:
+            return
+        via_id = None
+        master = self.data.get("NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR")
+        if master and (master_mac := format_mac(master)) != own:
+            master_device = registry.async_get_device(identifiers={(DOMAIN, master_mac)})
+            if master_device is not None:
+                via_id = master_device.id
+        if device.via_device_id != via_id:
+            registry.async_update_device(device.id, via_device_id=via_id)
 
     def _labels(self) -> dict[str, str]:
         """Map every configured adapter's MAC to its entry title, this one included.

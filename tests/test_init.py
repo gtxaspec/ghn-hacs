@@ -10,7 +10,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, async_
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, STATE_ON
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from custom_components.ghn_powerline.api import GhnBusyError
@@ -123,3 +123,53 @@ async def test_new_peer_gets_entities(hass: HomeAssistant) -> None:
     assert float(_state(hass, "sensor", f"peer_{new_peer}_tx_rate").state) == 32.0
     assert _state(hass, "sensor", "connected_peers").state == "2"
     assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+def _endpoint_values() -> dict[str, str]:
+    """The same domain seen from the peer: an end point whose master is MAC."""
+    values = dict(POLL_VALUES)
+    values.update(
+        {
+            "SYSTEM.PRODUCTION.MAC_ADDR": PEER,
+            "NODE.GENERAL.NODE_TYPE": "END_POINT",
+            "NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR": MAC,
+            "DIDMNG.GENERAL.MACS": f"00:00:00:00:00:00,{MAC},{PEER}",
+        }
+    )
+    return values
+
+
+async def test_endpoint_is_connected_via_domain_master(hass: HomeAssistant) -> None:
+    rack = _entry()
+    balcony = MockConfigEntry(
+        domain=DOMAIN,
+        title="Balcony",
+        unique_id=PEER,
+        data={CONF_HOST: "192.0.2.11", CONF_PASSWORD: "secret"},
+    )
+    rack.add_to_hass(hass)
+    balcony.add_to_hass(hass)
+    by_host = {"192.0.2.10": dict(POLL_VALUES), "192.0.2.11": _endpoint_values()}
+
+    async def fake_get(client, keys):
+        return dict(by_host[client.host])
+
+    with patch(GET, autospec=True, side_effect=fake_get):
+        assert await hass.config_entries.async_setup(rack.entry_id)
+        await hass.async_block_till_done()
+
+        devices = dr.async_get(hass)
+        rack_device = devices.async_get_device(identifiers={(DOMAIN, MAC)})
+        balcony_device = devices.async_get_device(identifiers={(DOMAIN, PEER)})
+        assert rack_device.via_device_id is None
+        assert balcony_device.via_device_id == rack_device.id
+
+        # Failover: the balcony becomes its own master, so the link goes away.
+        by_host["192.0.2.11"]["NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR"] = PEER
+        by_host["192.0.2.11"]["NODE.GENERAL.NODE_TYPE"] = "DOMAIN_MASTER"
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=61))
+        await hass.async_block_till_done()
+        assert devices.async_get_device(identifiers={(DOMAIN, PEER)}).via_device_id is None
+
+    assert await hass.config_entries.async_unload(rack.entry_id)
+    assert await hass.config_entries.async_unload(balcony.entry_id)

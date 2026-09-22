@@ -54,6 +54,15 @@ integration talks to it directly on your network; nothing goes to the cloud.
 
 Peer sensors are created as peers appear, and show as unavailable while a peer is not linked.
 
+## Device hierarchy
+
+Each adapter is added on its own, with its own address and password: the adapters are separate
+web servers, and the domain master only knows its peers' MAC addresses. Once more than one is set
+up, every end point is shown as **connected via** the current domain master, the way devices
+behind a hub are. G.hn can move the master role to another adapter, for example when the master
+loses power, and the link follows it. An adapter whose master is not set up in Home Assistant is
+shown on its own.
+
 ## Diagnostics
 
 **Download diagnostics** on the device page reads every key the adapter exposes and includes it in
