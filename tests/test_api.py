@@ -74,3 +74,17 @@ def test_parse_peers_tolerates_short_arrays() -> None:
     assert peer.active is False
     assert peer.tx_rate is None
     assert peer.device_id is None
+
+
+def test_parse_counters() -> None:
+    values = {
+        "ETHIFDRIVER.STATS.INFO": "100,200,5,oops,7",
+        "ETHIFDRIVER.STATS.INFO_DESC": "TIMER, MSECS, ETHB Tx bytes, ETHB Rx bytes, ETHB Tx errors",
+    }
+    assert api.parse_counters(values, "ETHIFDRIVER.STATS.INFO") == {
+        "TIMER": 100,
+        "MSECS": 200,
+        "ETHB Tx bytes": 5,
+        "ETHB Tx errors": 7,
+    }
+    assert api.parse_counters({}, "ETHIFDRIVER.STATS.INFO") == {}

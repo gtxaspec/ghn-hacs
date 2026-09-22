@@ -97,6 +97,21 @@ def parse_uptime(value: str | None) -> int | None:
     return ((days * 24 + hours) * 60 + minutes) * 60 + seconds
 
 
+def parse_counters(values: Mapping[str, str | None], key: str) -> dict[str, int]:
+    """Pair a comma-separated stats key with the field names in its KEY_DESC sibling.
+
+    e.g. ETHIFDRIVER.STATS.INFO + INFO_DESC -> {"ETHB Tx bytes": 1877024136, ...}.
+    """
+    names = _split(values, f"{key}_DESC")
+    counters: dict[str, int] = {}
+    for name, raw in zip(names, _split(values, key)):
+        try:
+            counters[name] = int(raw)
+        except ValueError:
+            continue
+    return counters
+
+
 def _split(values: Mapping[str, str | None], key: str) -> list[str]:
     value = values.get(key)
     return [part.strip() for part in value.split(",")] if value else []

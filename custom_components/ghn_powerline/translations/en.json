@@ -109,6 +109,75 @@
       },
       "peer_wire_length": {
         "name": "{peer} wire length (raw)"
+      },
+      "linked_peers": {
+        "name": "Linked peers"
+      },
+      "domain_master": {
+        "name": "Domain master"
+      },
+      "firmware": {
+        "name": "Firmware"
+      },
+      "chipset": {
+        "name": "Chipset"
+      },
+      "ip_address": {
+        "name": "IP address"
+      },
+      "domain_name": {
+        "name": "Domain name"
+      },
+      "domain_nodes": {
+        "name": "Nodes in domain"
+      },
+      "master_lost": {
+        "name": "Master lost"
+      },
+      "lost_maps": {
+        "name": "Lost MAPs"
+      },
+      "registrations": {
+        "name": "Registrations"
+      },
+      "dereg_cause": {
+        "name": "Last deregistration cause"
+      },
+      "linkdown_cause": {
+        "name": "Last link-down cause"
+      },
+      "visible_domains": {
+        "name": "Visible neighbor domains"
+      },
+      "etha_link_changes": {
+        "name": "Ethernet A link changes"
+      },
+      "etha_tx_bytes": {
+        "name": "Ethernet A sent"
+      },
+      "etha_rx_bytes": {
+        "name": "Ethernet A received"
+      },
+      "etha_tx_errors": {
+        "name": "Ethernet A TX errors"
+      },
+      "etha_rx_errors": {
+        "name": "Ethernet A RX errors"
+      },
+      "ethb_link_changes": {
+        "name": "Ethernet link changes"
+      },
+      "ethb_tx_bytes": {
+        "name": "Ethernet sent"
+      },
+      "ethb_rx_bytes": {
+        "name": "Ethernet received"
+      },
+      "ethb_tx_errors": {
+        "name": "Ethernet TX errors"
+      },
+      "ethb_rx_errors": {
+        "name": "Ethernet RX errors"
       }
     }
   },

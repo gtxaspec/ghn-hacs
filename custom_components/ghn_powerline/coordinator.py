@@ -19,6 +19,7 @@ from .api import (
     GhnClient,
     GhnConnectionError,
     GhnPeer,
+    parse_counters,
     parse_peers,
     parse_uptime,
 )
@@ -57,10 +58,29 @@ class GhnData:
     values: dict[str, str | None]
     peers: dict[str, GhnPeer]
     boot_time: datetime | None
+    eth_stats: dict[str, int]
+    """ETHIFDRIVER.STATS.INFO counters by field name, e.g. "ETHB Rx bytes"."""
+    labels: dict[str, str]
+    """Friendly names for MACs: the adapter's own title, or a peer's config entry title."""
 
     def get(self, key: str) -> str | None:
         """Return a raw value."""
         return self.values.get(key)
+
+    def label(self, mac: str | None) -> str | None:
+        """Return the friendly name for a MAC, or the MAC itself."""
+        if not mac:
+            return None
+        mac = format_mac(mac)
+        return self.labels.get(mac, mac)
+
+    def int_value(self, key: str) -> int | None:
+        """Return a value as an int."""
+        value = self.values.get(key)
+        try:
+            return int(value) if value is not None else None
+        except ValueError:
+            return None
 
     def flag(self, key: str) -> bool | None:
         """Return a YES/NO value as a bool."""
@@ -97,7 +117,11 @@ class GhnData:
         return len([part for part in raw.split(",") if part.strip()]) // 3
 
 
-def build_data(values: dict[str, str | None], previous: GhnData | None) -> GhnData:
+def build_data(
+    values: dict[str, str | None],
+    previous: GhnData | None,
+    labels: dict[str, str] | None = None,
+) -> GhnData:
     """Turn raw values into GhnData."""
     peers = parse_peers(values, values.get("SYSTEM.PRODUCTION.MAC_ADDR"))
     uptime = parse_uptime(values.get("SYSTEM.GENERAL.UPTIME"))
@@ -111,7 +135,13 @@ def build_data(values: dict[str, str | None], previous: GhnData | None) -> GhnDa
             and abs((boot_time - previous.boot_time).total_seconds()) < 60
         ):
             boot_time = previous.boot_time
-    return GhnData(values=values, peers=peers, boot_time=boot_time)
+    return GhnData(
+        values=values,
+        peers=peers,
+        boot_time=boot_time,
+        eth_stats=parse_counters(values, "ETHIFDRIVER.STATS.INFO"),
+        labels=labels or {},
+    )
 
 
 class GhnCoordinator(DataUpdateCoordinator[GhnData]):
@@ -159,7 +189,18 @@ class GhnCoordinator(DataUpdateCoordinator[GhnData]):
                 translation_placeholders={"error": str(err)},
             ) from err
         self._busy_since = None
-        return build_data(values, self.data)
+        return build_data(values, self.data, self._labels())
+
+    def _labels(self) -> dict[str, str]:
+        """Map every configured adapter's MAC to its entry title, this one included.
+
+        Recomputed on each poll so renames and newly added adapters show up without a reload.
+        """
+        return {
+            entry.unique_id: entry.title
+            for entry in self.hass.config_entries.async_entries(DOMAIN)
+            if entry.unique_id
+        }
 
     @property
     def device_info(self) -> DeviceInfo:

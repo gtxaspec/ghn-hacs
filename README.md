@@ -38,12 +38,18 @@ integration talks to it directly on your network; nothing goes to the cloud.
 |---|---|
 | Temperature | Chip temperature, °C. The firmware reports hundredths of a degree. |
 | Role | Domain master or end point. |
-| Connected peers | Number of adapters this one currently has a link to. |
+| Domain master | Which adapter is the master, by name when it is also set up in Home Assistant. |
+| Linked peers | Names of the adapters this one has a link to, with each one's MAC and rates as attributes. |
+| Connected peers | How many there are. |
 | *peer* TX rate / RX rate | PHY rate to and from each other adapter, Mbps, using the same conversion as the web UI. A peer that is also set up in Home Assistant is named after its entry. |
 | Ethernet link | Link state of the Ethernet port. |
+| Ethernet sent / received | Bytes through the Ethernet port. The firmware's counters are 32-bit and wrap around 4.3 GB; Home Assistant treats that as a reset. |
 | Encryption | Whether the powerline network is secured. |
-| CPU usage, Memory usage, Last boot, G.hn profile, Ethernet speed | Diagnostic. |
-| User notches, *peer* attenuation (raw), *peer* wire length (raw) | Diagnostic, disabled by default. The firmware does not document the attenuation and wire-length units, so they are shown as reported. |
+| Master lost, Lost MAPs, Registrations | Diagnostic. How often this adapter lost the domain master, missed its MAP beacons and re-registered since boot. Climbing counts mean an unstable link. |
+| Last deregistration cause, Last link-down cause | Diagnostic, as the firmware words them. |
+| Firmware, IP address, Nodes in domain, Visible neighbor domains | Diagnostic. Neighbor domains are other powerline networks the adapter can hear. |
+| CPU usage, Memory usage, Last boot, G.hn profile, Ethernet speed, Ethernet link changes, Ethernet TX/RX errors | Diagnostic. |
+| Domain name, Chipset, User notches, *peer* attenuation (raw), *peer* wire length (raw) | Diagnostic, disabled by default. The domain name is not a secret on its own (the pairing password is), but it is half of what it takes to join the network. The firmware does not document the attenuation and wire-length units, so they are shown as reported. |
 | Restart | Reboots the adapter. Its powerline links drop for about 30 seconds. |
 
 Peer sensors are created as peers appear, and show as unavailable while a peer is not linked.

@@ -41,6 +41,63 @@
       },
       "peer_wire_length": {
         "default": "mdi:cable-data"
+      },
+      "linked_peers": {
+        "default": "mdi:lan-connect"
+      },
+      "domain_master": {
+        "default": "mdi:crown-outline"
+      },
+      "firmware": {
+        "default": "mdi:package-variant-closed"
+      },
+      "chipset": {
+        "default": "mdi:chip"
+      },
+      "ip_address": {
+        "default": "mdi:ip-network"
+      },
+      "domain_name": {
+        "default": "mdi:tag-outline"
+      },
+      "domain_nodes": {
+        "default": "mdi:counter"
+      },
+      "master_lost": {
+        "default": "mdi:lan-disconnect"
+      },
+      "lost_maps": {
+        "default": "mdi:signal-off"
+      },
+      "registrations": {
+        "default": "mdi:account-network"
+      },
+      "dereg_cause": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "linkdown_cause": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "visible_domains": {
+        "default": "mdi:home-group"
+      },
+      "etha_link_changes": {
+        "default": "mdi:ethernet"
+      },
+      "etha_tx_errors": {
+        "default": "mdi:alert-outline"
+      },
+      "etha_rx_errors": {
+        "default": "mdi:alert-outline"
+      },
+      "ethb_link_changes": {
+        "default": "mdi:ethernet"
+      },
+      "ethb_tx_errors": {
+        "default": "mdi:alert-outline"
+      },
+      "ethb_rx_errors": {
+        "default": "mdi:alert-outline"
       }
     }
   }

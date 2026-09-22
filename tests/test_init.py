@@ -54,6 +54,21 @@ async def test_setup_creates_entities(hass: HomeAssistant) -> None:
     assert float(_state(hass, "sensor", f"peer_{PEER}_rx_rate").state) == 190.592
     assert _state(hass, "binary_sensor", "encryption").state == STATE_ON
     assert _state(hass, "binary_sensor", "ethb_link").state == STATE_ON
+    assert _state(hass, "sensor", "firmware").state == "V1.00(ABSU.7)C0 SPIRIT.v7_8_r619+37_cvs"
+    assert _state(hass, "sensor", "ip_address").state == "192.0.2.10"
+    # The domain master is this adapter, named after its own entry.
+    assert _state(hass, "sensor", "domain_master").state == "Rack"
+    linked = _state(hass, "sensor", "linked_peers")
+    assert linked.state == PEER
+    assert linked.attributes["peers"] == [
+        {"name": PEER, "mac": PEER, "tx_rate": 189.088, "rx_rate": 190.592}
+    ]
+    assert _state(hass, "sensor", "master_lost").state == "4"
+    assert _state(hass, "sensor", "lost_maps").state == "44"
+    assert _state(hass, "sensor", "dereg_cause").state == "Node resigned"
+    assert _state(hass, "sensor", "ethb_link_changes").state == "3"
+    assert _state(hass, "sensor", "ethb_rx_errors").state == "1"
+    assert round(float(_state(hass, "sensor", "ethb_tx_bytes").state), 2) == 1.88
 
     registry = er.async_get(hass)
     # ETHA is disabled on this adapter, so it gets no entities.
@@ -62,6 +77,10 @@ async def test_setup_creates_entities(hass: HomeAssistant) -> None:
         registry.async_get_entity_id("sensor", DOMAIN, f"{MAC}_peer_{PEER}_tx_rate")
     )
     assert peer_entry.disabled_by is None
+    domain_name = registry.async_get(
+        registry.async_get_entity_id("sensor", DOMAIN, f"{MAC}_domain_name")
+    )
+    assert domain_name.disabled_by is er.RegistryEntryDisabler.INTEGRATION
 
     assert await hass.config_entries.async_unload(entry.entry_id)
 

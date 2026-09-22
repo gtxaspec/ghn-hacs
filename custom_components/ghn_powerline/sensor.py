@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -12,7 +13,13 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfDataRate, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    EntityCategory,
+    UnitOfDataRate,
+    UnitOfInformation,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -61,12 +68,106 @@ def _port_enabled(port: str) -> Callable[[GhnData], bool]:
     return lambda data: bool(data.flag(f"ETHIFDRIVER.{port}.ENABLED"))
 
 
+def _eth_counter(port: str, field: str) -> Callable[[GhnData], StateType]:
+    return lambda data: data.eth_stats.get(f"{port} {field}")
+
+
+def _key(key: str) -> Callable[[GhnData], StateType]:
+    return lambda data: data.get(key)
+
+
+def _int_key(key: str) -> Callable[[GhnData], StateType]:
+    return lambda data: data.int_value(key)
+
+
+def _chipset(data: GhnData) -> str | None:
+    asic, name = data.get("SYSTEM.GENERAL.ASIC"), data.get("SYSTEM.GENERAL.CHIPSET")
+    if asic and name:
+        return f"{asic} ({name})"
+    return asic or name
+
+
+def _linked_peers(data: GhnData) -> str:
+    names = sorted(data.label(mac) or mac for mac, peer in data.peers.items() if peer.active)
+    return ", ".join(names)[:255] if names else "None"
+
+
+def _linked_peers_attrs(data: GhnData) -> dict[str, Any]:
+    return {
+        "peers": [
+            {
+                "name": data.label(mac),
+                "mac": mac,
+                "tx_rate": peer.tx_rate,
+                "rx_rate": peer.rx_rate,
+            }
+            for mac, peer in sorted(data.peers.items())
+            if peer.active
+        ]
+    }
+
+
 @dataclass(frozen=True, kw_only=True)
 class GhnSensorDescription(SensorEntityDescription):
     """Describe a device-level sensor."""
 
     value_fn: Callable[[GhnData], StateType | datetime]
     exists_fn: Callable[[GhnData], bool] = lambda _data: True
+    attrs_fn: Callable[[GhnData], dict[str, Any]] | None = None
+
+
+def _port_sensors(port: str) -> tuple[GhnSensorDescription, ...]:
+    """Ethernet speed, traffic, errors and link changes for one port."""
+    prefix = port.lower()
+    exists = _port_enabled(port)
+    traffic = [
+        GhnSensorDescription(
+            key=f"{prefix}_{direction}_bytes",
+            translation_key=f"{prefix}_{direction}_bytes",
+            device_class=SensorDeviceClass.DATA_SIZE,
+            native_unit_of_measurement=UnitOfInformation.BYTES,
+            suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+            suggested_display_precision=2,
+            # The firmware counters are 32-bit and wrap; total_increasing treats that as a reset.
+            state_class=SensorStateClass.TOTAL_INCREASING,
+            value_fn=_eth_counter(port, f"{field} bytes"),
+            exists_fn=exists,
+        )
+        for direction, field in (("tx", "Tx"), ("rx", "Rx"))
+    ]
+    errors = [
+        GhnSensorDescription(
+            key=f"{prefix}_{direction}_errors",
+            translation_key=f"{prefix}_{direction}_errors",
+            state_class=SensorStateClass.TOTAL_INCREASING,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            value_fn=_eth_counter(port, f"{field} errors"),
+            exists_fn=exists,
+        )
+        for direction, field in (("tx", "Tx"), ("rx", "Rx"))
+    ]
+    return (
+        GhnSensorDescription(
+            key=f"{prefix}_speed",
+            translation_key=f"{prefix}_speed",
+            device_class=SensorDeviceClass.DATA_RATE,
+            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
+            suggested_display_precision=0,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            value_fn=_eth_speed(port),
+            exists_fn=exists,
+        ),
+        GhnSensorDescription(
+            key=f"{prefix}_link_changes",
+            translation_key=f"{prefix}_link_changes",
+            state_class=SensorStateClass.TOTAL_INCREASING,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            value_fn=_int_key(f"ETHPHYCONF.{port}.LINK_CHANGES"),
+            exists_fn=exists,
+        ),
+        *traffic,
+        *errors,
+    )
 
 
 SENSORS: tuple[GhnSensorDescription, ...] = (
@@ -89,6 +190,92 @@ SENSORS: tuple[GhnSensorDescription, ...] = (
         translation_key="connected_peers",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: sum(1 for peer in data.peers.values() if peer.active),
+    ),
+    GhnSensorDescription(
+        key="linked_peers",
+        translation_key="linked_peers",
+        value_fn=_linked_peers,
+        attrs_fn=_linked_peers_attrs,
+    ),
+    GhnSensorDescription(
+        key="domain_master",
+        translation_key="domain_master",
+        value_fn=lambda data: data.label(data.get("NODE.GENERAL.DOMAIN_MASTER_MAC_ADDR")),
+    ),
+    GhnSensorDescription(
+        key="firmware",
+        translation_key="firmware",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_key("SYSTEM.GENERAL.FW_VERSION"),
+    ),
+    GhnSensorDescription(
+        key="chipset",
+        translation_key="chipset",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_chipset,
+    ),
+    GhnSensorDescription(
+        key="ip_address",
+        translation_key="ip_address",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_key("TCPIP.IPV4.IP_ADDRESS"),
+    ),
+    # Like a Wi-Fi network name: not the secret (the pairing password is), but no need to
+    # show it everywhere either.
+    GhnSensorDescription(
+        key="domain_name",
+        translation_key="domain_name",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=_key("NODE.GENERAL.DOMAIN_NAME"),
+    ),
+    GhnSensorDescription(
+        key="domain_nodes",
+        translation_key="domain_nodes",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_int_key("MASTERSELECTION.DOMAIN.NUM_NODES"),
+    ),
+    GhnSensorDescription(
+        key="master_lost",
+        translation_key="master_lost",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_int_key("MASTERSELECTION.DOMAIN.MASTER_LOST"),
+    ),
+    GhnSensorDescription(
+        key="lost_maps",
+        translation_key="lost_maps",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_int_key("MASTERSELECTION.DOMAIN.LOST_MAPS"),
+    ),
+    GhnSensorDescription(
+        key="registrations",
+        translation_key="registrations",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_int_key("MASTERSELECTION.DOMAIN.REGISTRATIONS"),
+    ),
+    GhnSensorDescription(
+        key="dereg_cause",
+        translation_key="dereg_cause",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_key("PHYMNG.DOMAIN.DEREG_CAUSE"),
+    ),
+    GhnSensorDescription(
+        key="linkdown_cause",
+        translation_key="linkdown_cause",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_key("PHYMNG.DOMAIN.LINKDOWN_CAUSE"),
+    ),
+    GhnSensorDescription(
+        key="visible_domains",
+        translation_key="visible_domains",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=_int_key("NDIM.GENERAL.N_VISIBLE_DOMAINS"),
     ),
     GhnSensorDescription(
         key="cpu_usage",
@@ -126,19 +313,7 @@ SENSORS: tuple[GhnSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=lambda data: data.notch_count,
     ),
-    *(
-        GhnSensorDescription(
-            key=f"{port.lower()}_speed",
-            translation_key=f"{port.lower()}_speed",
-            device_class=SensorDeviceClass.DATA_RATE,
-            native_unit_of_measurement=UnitOfDataRate.MEGABITS_PER_SECOND,
-            suggested_display_precision=0,
-            entity_category=EntityCategory.DIAGNOSTIC,
-            value_fn=_eth_speed(port),
-            exists_fn=_port_enabled(port),
-        )
-        for port in ETH_PORTS
-    ),
+    *(description for port in ETH_PORTS for description in _port_sensors(port)),
 )
 
 
@@ -243,6 +418,13 @@ class GhnSensor(GhnEntity, SensorEntity):
     def native_value(self) -> StateType | datetime:
         """Return the value."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra attributes, if the description defines any."""
+        if self.entity_description.attrs_fn is None:
+            return None
+        return self.entity_description.attrs_fn(self.coordinator.data)
 
 
 class GhnPeerSensor(GhnEntity, SensorEntity):
