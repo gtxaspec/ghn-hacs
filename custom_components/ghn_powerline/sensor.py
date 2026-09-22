@@ -128,7 +128,8 @@ def _port_sensors(port: str) -> tuple[GhnSensorDescription, ...]:
             native_unit_of_measurement=UnitOfInformation.BYTES,
             suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
             suggested_display_precision=2,
-            # The firmware counters are 32-bit and wrap; total_increasing treats that as a reset.
+            # The counters look 32-bit (a timer in the same array sits near 2**32); if they wrap,
+            # total_increasing treats that as a reset.
             state_class=SensorStateClass.TOTAL_INCREASING,
             value_fn=_eth_counter(port, f"{field} bytes"),
             exists_fn=exists,

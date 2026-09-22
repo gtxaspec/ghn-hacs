@@ -43,7 +43,7 @@ integration talks to it directly on your network; nothing goes to the cloud.
 | Connected peers | How many there are. |
 | *peer* TX rate / RX rate | PHY rate to and from each other adapter, Mbps, using the same conversion as the web UI. A peer that is also set up in Home Assistant is named after its entry. |
 | Ethernet link | Link state of the Ethernet port. |
-| Ethernet sent / received | Bytes through the Ethernet port. The firmware's counters are 32-bit and wrap around 4.3 GB; Home Assistant treats that as a reset. |
+| Ethernet sent / received | Bytes through the Ethernet port. The firmware's counters look 32-bit, so they probably wrap at about 4.3 GB; Home Assistant treats a wrap as a counter reset. |
 | Encryption | Whether the powerline network is secured. |
 | Master lost, Lost MAPs, Registrations | Diagnostic. How often this adapter lost the domain master, missed its MAP beacons and re-registered since boot. Climbing counts mean an unstable link. |
 | Last deregistration cause, Last link-down cause | Diagnostic, as the firmware words them. |
